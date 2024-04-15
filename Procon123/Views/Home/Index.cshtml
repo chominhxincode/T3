@@ -1,0 +1,139 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+
+@using Procon123.Models
+@model Procon123.Models.ChessboardModel
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chessboard</title>
+    <style>
+        /* CSS để trang trí bàn cờ */
+        /* Kích thước ô bàn cờ */
+        .square {
+            width: 100px; /* Chiều rộng ô bàn cờ */
+            height: 100px; /* Chiều cao ô bàn cờ */
+            border: 1px solid #000;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 28px; /* Kích thước chữ */
+            text-align: center;
+            position: relative; /* Để có thể định vị thợ thủ công bên trong */
+        }
+
+        /* Màu sắc và hình dạng cho các loại ô */
+        .castle {
+            background-color: #8B4513; /* Màu nâu đậm cho Lâu đài */
+            border-radius: 10px; /* Bo góc để tạo hình dạng hình tròn */
+        }
+
+        .lake {
+            background-color: #1E90FF; /* Màu xanh dương cho Ao */
+        }
+
+        .territory {
+            background-color: #FFFF00; /* Màu vàng cho Lãnh thổ */
+        }
+
+        .wall {
+            background-color: #808080; /* Màu xám cho Tường */
+        }
+
+        .plain {
+            background-color: #008000; /* Màu xanh lá cho Đồng bằng */
+        }
+
+        /* Hiệu ứng hover */
+        .square:hover {
+            transform: scale(1.1); /* Phóng to ô khi di chuột qua */
+        }
+
+        /* Thợ thủ công */
+        .worker {
+            width: 20px;
+            height: 20px;
+            background-color: red; /* Màu đỏ cho thợ thủ công */
+            border-radius: 50%; /* Hình tròn */
+            position: absolute; /* Định vị tuyệt đối bên trong ô */
+            top: 50%; /* Canh chỉnh vị trí theo chiều dọc */
+            left: 50%; /* Canh chỉnh vị trí theo chiều ngang */
+            transform: translate(-50%, -50%); /* Dịch chuyển thợ thủ công để canh chỉnh vào trung tâm của ô */
+            display: none; /* Mặc định ẩn thợ thủ công */
+        }
+
+            /* Hiệu ứng hover */
+            .worker:hover {
+                transform: scale(1.5); /* Phóng to khi di chuột qua */
+            }
+    </style>
+</head>
+<body>
+    <h2>Chessboard</h2>
+    <div id="chessboard-container">
+        <div id="chessboard">
+            @for (int i = 0; i < Model.Rows; i++)
+            {
+                for (int j = 0; j < Model.Columns; j++)
+                {
+                    var squareClass = GetSquareClass(i, j); /* Hàm để xác định lớp CSS cho ô */
+                    <div class="square @squareClass" data-row="@i" data-col="@j">
+                        @Model.Squares[i, j]
+                        <div class="worker"></div> <!-- Thêm thẻ div cho thợ thủ công -->
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <script>
+        document.querySelectorAll('.territory').forEach(square => {
+            square.addEventListener('click', function () {
+                const row = parseInt(square.getAttribute('data-row'));
+                const col = parseInt(square.getAttribute('data-col'));
+                const worker = square.querySelector('.worker');
+                worker.style.display = 'block';
+
+                // Gửi yêu cầu POST đến API Controller
+                $.post('/Api/Move', { currentRow: row, currentColumn: col }, function (data) {
+                    // Xử lý dữ liệu phản hồi nếu cần
+                });
+
+                document.querySelectorAll('.worker').forEach(w => {
+                    if (w !== worker) {
+                        w.style.display = 'none';
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+
+@functions {
+    // Hàm để xác định lớp CSS cho ô dựa trên vị trí của nó
+    private string GetSquareClass(int row, int col)
+    {
+        if (row == 0 || col == 0 || row == Model.Rows - 1 || col == Model.Columns - 1)
+        {
+            return "wall";
+        }
+        else
+        {
+            switch (Model.Areas[row, col])
+            {
+                case ChessboardModel.AreaType.Castle:
+                    return "castle";
+                case ChessboardModel.AreaType.Pond:
+                    return "lake";
+                case ChessboardModel.AreaType.Territory:
+                    return "territory";
+                default:
+                    return "plain";
+            }
+        }
+    }
+}
